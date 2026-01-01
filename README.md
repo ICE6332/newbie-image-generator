@@ -1,5 +1,9 @@
 ﻿<h1 align="center">Newbie Image Generator</h1>
 
+<p align="center">
+  <a href="README.md">中文</a> | <a href="README_EN.md">English</a>
+</p>
+
 <p align="center">专为 <b>NewBie image Exp0.1</b> 模型打造的现代化 ComfyUI Web 前端</p>
 
 <p align="center">
