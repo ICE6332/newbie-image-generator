@@ -12,6 +12,14 @@ export interface GenerateRequest {
   scheduler?: string;
   denoise?: number;
   batch_size?: number;
+  hifix_enabled?: boolean;
+  hifix_steps?: number;
+  hifix_cfg?: number;
+  hifix_denoise?: number;
+  hifix_sampler?: string;
+  hifix_scheduler?: string;
+  hifix_scale?: number;
+  hifix_upscale_method?: string;
 }
 
 export interface QueueResponse {

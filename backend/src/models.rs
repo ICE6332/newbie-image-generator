@@ -40,6 +40,30 @@ pub struct GenerateRequest {
     /// Batch size
     #[serde(default = "default_batch_size")]
     pub batch_size: u32,
+    /// HiFix enabled
+    #[serde(default)]
+    pub hifix_enabled: bool,
+    /// HiFix steps
+    #[serde(default = "default_hifix_steps")]
+    pub hifix_steps: u32,
+    /// HiFix CFG
+    #[serde(default = "default_hifix_cfg")]
+    pub hifix_cfg: f32,
+    /// HiFix denoise
+    #[serde(default = "default_hifix_denoise")]
+    pub hifix_denoise: f32,
+    /// HiFix sampler
+    #[serde(default = "default_hifix_sampler")]
+    pub hifix_sampler: String,
+    /// HiFix scheduler
+    #[serde(default = "default_hifix_scheduler")]
+    pub hifix_scheduler: String,
+    /// HiFix scale
+    #[serde(default = "default_hifix_scale")]
+    pub hifix_scale: f32,
+    /// HiFix upscale method
+    #[serde(default = "default_hifix_upscale_method")]
+    pub hifix_upscale_method: String,
 }
 
 fn default_width() -> u32 {
@@ -68,6 +92,27 @@ fn default_denoise() -> f32 {
 }
 fn default_batch_size() -> u32 {
     1
+}
+fn default_hifix_steps() -> u32 {
+    20
+}
+fn default_hifix_cfg() -> f32 {
+    4.0
+}
+fn default_hifix_denoise() -> f32 {
+    0.5
+}
+fn default_hifix_sampler() -> String {
+    "res_multistep".to_string()
+}
+fn default_hifix_scheduler() -> String {
+    "linear_quadratic".to_string()
+}
+fn default_hifix_scale() -> f32 {
+    1.5
+}
+fn default_hifix_upscale_method() -> String {
+    "nearest-exact".to_string()
 }
 
 // ============================================================================
