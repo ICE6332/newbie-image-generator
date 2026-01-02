@@ -7,7 +7,8 @@ mod models;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
-use tower_http::cors::{Any, CorsLayer};
+use axum::http::HeaderValue;
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -42,13 +43,23 @@ async fn main() {
         comfyui: comfyui.clone(),
         event_tx: event_tx.clone(),
         comfyui_client_id: comfyui_client_id.clone(),
+        config: config.clone(),
     };
 
-    // Configure CORS
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+    // Configure CORS (local-only by default)
+    let origin_list: Vec<HeaderValue> = config
+        .cors_origins
+        .iter()
+        .filter_map(|origin| origin.parse().ok())
+        .collect();
+
+    let cors = if origin_list.is_empty() {
+        CorsLayer::new()
+    } else {
+        CorsLayer::new().allow_origin(AllowOrigin::list(origin_list))
+    }
+    .allow_methods(Any)
+    .allow_headers(Any);
 
     // Create router with middleware
     let app = create_router(state)

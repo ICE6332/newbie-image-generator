@@ -34,6 +34,8 @@ pub struct Config {
     pub public_base_url: String,
     /// Allowed CORS origins
     pub cors_origins: Vec<String>,
+    /// Allow remote ComfyUI URLs (SSRF risk if enabled)
+    pub allow_remote_comfyui: bool,
 }
 
 impl Config {
@@ -41,7 +43,7 @@ impl Config {
     pub fn from_env() -> Self {
         dotenvy::dotenv().ok();
 
-        let host = env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
+        let host = env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
         let port = env::var("PORT")
             .unwrap_or_else(|_| "3000".to_string())
             .parse()
@@ -62,12 +64,17 @@ impl Config {
             .map(|s| s.trim().to_string())
             .collect();
 
+        let allow_remote_comfyui = env::var("ALLOW_REMOTE_COMFYUI")
+            .unwrap_or_else(|_| "false".to_string())
+            .to_lowercase();
+
         Self {
             host,
             port,
             comfyui: Arc::new(RwLock::new(ComfyUIConfig::new(&comfyui_url))),
             public_base_url,
             cors_origins,
+            allow_remote_comfyui: matches!(allow_remote_comfyui.as_str(), "1" | "true" | "yes"),
         }
     }
 
