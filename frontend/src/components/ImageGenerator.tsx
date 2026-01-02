@@ -378,7 +378,7 @@ export function ImageGenerator() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">自然语言描述</CardTitle>
             <CardDescription className="text-xs">
-              用自然语言描述画面，会添加到 prompt 最后
+              用自然语言描述画面，会添加到 prompt 末尾
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -402,7 +402,7 @@ export function ImageGenerator() {
                 <CardTitle className="flex items-center gap-2">
                   Prompt
                 </CardTitle>
-                <CardDescription>描述你想生成的图像</CardDescription>
+                <CardDescription>描述你想生成的图片</CardDescription>
               </div>
               <Button
                 variant="outline"
