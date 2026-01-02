@@ -16,15 +16,6 @@ export const setComfyUIUrl = (url: string): void => {
   localStorage.setItem(COMFYUI_URL_KEY, trimTrailingSlash(url));
 };
 
-export const getImageUrl = (
-  filename: string,
-  subfolder: string,
-  type: string,
-): string => {
-  const base = getComfyUIUrl();
-  return `${base}/view?filename=${encodeURIComponent(filename)}&subfolder=${encodeURIComponent(subfolder)}&type=${encodeURIComponent(type)}`;
-};
-
 export const resolveApiBase = () => {
   const apiBase = import.meta.env.VITE_API_BASE_URL?.trim();
   if (apiBase) {
