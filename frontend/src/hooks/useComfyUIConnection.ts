@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { getComfyUIUrl, setComfyUIUrl } from "@/lib/config";
+const DEFAULT_COMFYUI_URL = "http://127.0.0.1:8188";
 
 export type ConnectionTestResult = "success" | "error" | null;
 
 export function useComfyUIConnection() {
-  const [comfyuiUrl, setComfyuiUrlState] = useState(getComfyUIUrl());
+  const [comfyuiUrl, setComfyuiUrlState] = useState(DEFAULT_COMFYUI_URL);
   const [comfyuiConnected, setComfyuiConnected] = useState<boolean | null>(
     null,
   );
@@ -21,25 +21,20 @@ export function useComfyUIConnection() {
     }
   }, []);
 
-  const syncComfyUIUrl = useCallback(
+  const updateComfyUIUrl = useCallback(
     async (url: string) => {
       setComfyuiUrlState(url);
-      setComfyUIUrl(url);
       try {
-        await api.setComfyUIUrl(url);
+        const response = await api.setComfyUIUrl(url);
+        if (response.url) {
+          setComfyuiUrlState(response.url);
+        }
       } catch {
         // Backend might not be available yet
       }
-    },
-    [],
-  );
-
-  const updateComfyUIUrl = useCallback(
-    async (url: string) => {
-      await syncComfyUIUrl(url);
       await checkComfyUIHealth();
     },
-    [checkComfyUIHealth, syncComfyUIUrl],
+    [checkComfyUIHealth],
   );
 
   const testConnection = useCallback(async () => {
@@ -64,8 +59,18 @@ export function useComfyUIConnection() {
   }, [comfyuiUrl, updateComfyUIUrl]);
 
   useEffect(() => {
-    syncComfyUIUrl(getComfyUIUrl());
-  }, [syncComfyUIUrl]);
+    const fetchUrl = async () => {
+      try {
+        const response = await api.getComfyUIUrl();
+        if (response.url) {
+          setComfyuiUrlState(response.url);
+        }
+      } catch {
+        // Backend might not be available yet
+      }
+    };
+    fetchUrl();
+  }, []);
 
   useEffect(() => {
     checkComfyUIHealth();

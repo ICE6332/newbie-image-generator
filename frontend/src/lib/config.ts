@@ -1,21 +1,5 @@
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
-const COMFYUI_URL_KEY = "comfyui_url";
-const DEFAULT_COMFYUI_URL = "http://127.0.0.1:8188";
-
-export const getComfyUIUrl = (): string => {
-  const url = localStorage.getItem(COMFYUI_URL_KEY) || DEFAULT_COMFYUI_URL;
-  // Ensure URL has protocol
-  if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
-    return `http://${url}`;
-  }
-  return url;
-};
-
-export const setComfyUIUrl = (url: string): void => {
-  localStorage.setItem(COMFYUI_URL_KEY, trimTrailingSlash(url));
-};
-
 export const resolveApiBase = () => {
   const apiBase = import.meta.env.VITE_API_BASE_URL?.trim();
   if (apiBase) {
