@@ -39,3 +39,5 @@ models/
 .idea/
 .vscode/
 *.swp
+newbie-image-generator-release/
+*.zip
