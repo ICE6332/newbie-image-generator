@@ -2,6 +2,7 @@
 
 export interface GenerateRequest {
   prompt: string;
+  system_prompt?: string;
   negative_prompt?: string;
   width?: number;
   height?: number;

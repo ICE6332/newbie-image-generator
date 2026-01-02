@@ -342,15 +342,10 @@ impl ComfyUIClient {
         let vae_name = find_model(&models.vae, &["newbie", "diffusion_pytorch"])
             .unwrap_or_else(|| "newbie-image.safetensors".to_string());
 
-        // Build the prompt prefix for newbie model
-        let positive_prompt = format!(
-            "You are an assistant designed to generate high-quality anime images with the highest degree of image-text alignment based on xml format textual prompts. <Prompt Start>\n{}",
-            request.prompt
-        );
-
-        // Default negative prompt if empty
+        // Build the final prompt on the backend (frontend provides system_prompt + user prompt).
+        let positive_prompt = compose_positive_prompt(request);
         let negative_prompt = if request.negative_prompt.is_empty() {
-            "<danbooru_tags>low_score_rate, worst quality, low quality, bad quality, lowres, low res, pixelated, blurry, blurred, compression artifacts, jpeg artifacts, bad anatomy, worst hands, deformed hands, deformed fingers, deformed feet, deformed toes, extra limbs, extra arms, extra legs, extra fingers, extra digits, extra digit, fused fingers, missing limbs, missing arms, missing fingers, missing toes, wrong hands, ugly hands, ugly fingers, twisted hands, flexible deformity, conjoined, disembodied, text, watermark, signature, logo, ugly, worst, very displeasing, displeasing, error, doesnotexist, unfinished, poorly drawn face, poorly drawn hands, poorly drawn feet, artistic error, bad proportions, bad perspective, out of frame, ai-generated, ai-assisted, stable diffusion, overly saturated, overly vivid, cross-eye, expressionless, scan, sketch, monochrome, simple background, abstract, sequence, lineup, 2koma, 4koma, microsoft paint \\(medium\\), artifacts, adversarial noise, has bad revision, resized, image sample,low_aesthetic</danbooru_tags>".to_string()
+            String::new()
         } else {
             format!("<danbooru_tags>{}</danbooru_tags>", request.negative_prompt)
         };
@@ -499,6 +494,73 @@ impl ComfyUIClient {
 
         workflow
     }
+}
+
+fn compose_positive_prompt(request: &GenerateRequest) -> String {
+    let user_prompt = normalize_prompt(&request.prompt);
+    let system_prompt = request
+        .system_prompt
+        .as_deref()
+        .unwrap_or("")
+        .trim();
+
+    if system_prompt.is_empty() {
+        format!("<Prompt Start>,{}", user_prompt)
+    } else {
+        format!("{}\n<Prompt Start>,{}", system_prompt, user_prompt)
+    }
+}
+
+fn normalize_prompt(raw: &str) -> String {
+    let mut s = raw;
+    if let Some(stripped) = s.strip_prefix('\u{feff}') {
+        s = stripped;
+    }
+
+    let s = s.replace("\r\n", "\n").replace('\r', "\n");
+    let mut s = s.trim_start();
+
+    // If the user already pasted a Prompt Start header, remove it to avoid duplication.
+    let prompt_start = "<prompt start>";
+    if s.len() >= prompt_start.len() && s[..prompt_start.len()].eq_ignore_ascii_case(prompt_start)
+    {
+        s = s[prompt_start.len()..].trim_start_matches(|c: char| {
+            c.is_whitespace() || c == ',' || c == ':'
+        });
+    }
+
+    let s = s.trim();
+    if s.is_empty() {
+        return String::new();
+    }
+
+    let mut lines = Vec::new();
+    for line in s.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        let mut out = String::with_capacity(trimmed.len());
+        let mut prev_space = false;
+        for ch in trimmed.chars() {
+            if ch.is_whitespace() {
+                if !prev_space {
+                    out.push(' ');
+                    prev_space = true;
+                }
+            } else {
+                out.push(ch);
+                prev_space = false;
+            }
+        }
+
+        if !out.is_empty() {
+            lines.push(out);
+        }
+    }
+
+    lines.join("\n")
 }
 
 /// Generate a random seed
