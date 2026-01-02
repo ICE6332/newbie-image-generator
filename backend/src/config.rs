@@ -34,8 +34,15 @@ pub struct Config {
     pub public_base_url: String,
     /// Allowed CORS origins
     pub cors_origins: Vec<String>,
-    /// Allow remote ComfyUI URLs (SSRF risk if enabled)
-    pub allow_remote_comfyui: bool,
+    /// ComfyUI URL policy (controls which hosts are allowed)
+    pub comfyui_url_policy: ComfyUIUrlPolicy,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ComfyUIUrlPolicy {
+    LocalOnly,
+    Lan,
+    Any,
 }
 
 impl Config {
@@ -65,8 +72,15 @@ impl Config {
             .collect();
 
         let allow_remote_comfyui = env::var("ALLOW_REMOTE_COMFYUI")
-            .unwrap_or_else(|_| "false".to_string())
+            .unwrap_or_else(|_| "lan".to_string())
             .to_lowercase();
+
+        let comfyui_url_policy = match allow_remote_comfyui.as_str() {
+            "true" | "1" | "yes" | "any" | "all" => ComfyUIUrlPolicy::Any,
+            "lan" | "local" => ComfyUIUrlPolicy::Lan,
+            "false" | "0" | "no" => ComfyUIUrlPolicy::LocalOnly,
+            _ => ComfyUIUrlPolicy::Lan,
+        };
 
         Self {
             host,
@@ -74,7 +88,7 @@ impl Config {
             comfyui: Arc::new(RwLock::new(ComfyUIConfig::new(&comfyui_url))),
             public_base_url,
             cors_origins,
-            allow_remote_comfyui: matches!(allow_remote_comfyui.as_str(), "1" | "true" | "yes"),
+            comfyui_url_policy,
         }
     }
 

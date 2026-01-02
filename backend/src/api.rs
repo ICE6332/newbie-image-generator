@@ -8,13 +8,14 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use futures::{SinkExt, StreamExt};
 use reqwest::Url;
 use serde::Deserialize;
+use std::net::{IpAddr, ToSocketAddrs};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 use tower_http::services::{ServeDir, ServeFile};
 use uuid::Uuid;
 
 use crate::comfyui::ComfyUIClient;
-use crate::config::Config;
+use crate::config::{ComfyUIUrlPolicy, Config};
 use crate::error::{AppError, AppResult};
 use crate::models::*;
 
@@ -65,7 +66,7 @@ pub fn create_router(state: AppState) -> Router {
         .fallback_service(serve_dir)
 }
 
-fn normalize_comfyui_url(raw: &str, allow_remote: bool) -> AppResult<String> {
+fn normalize_comfyui_url(raw: &str, policy: ComfyUIUrlPolicy) -> AppResult<String> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         return Err(AppError::InvalidRequest(
@@ -100,18 +101,76 @@ fn normalize_comfyui_url(raw: &str, allow_remote: bool) -> AppResult<String> {
         .host_str()
         .ok_or_else(|| AppError::InvalidRequest("ComfyUI URL missing host".to_string()))?;
 
-    if !allow_remote && !is_local_host(host) {
-        return Err(AppError::InvalidRequest(
-            "Remote ComfyUI URLs are disabled. Set ALLOW_REMOTE_COMFYUI=true to allow."
-                .to_string(),
-        ));
+    if !is_allowed_comfyui_host(host, parsed.port_or_known_default(), policy) {
+        return Err(AppError::InvalidRequest(format!(
+            "ComfyUI URL must be local/LAN. Set ALLOW_REMOTE_COMFYUI=true to allow public hosts. (current={:?})",
+            policy
+        )));
     }
 
     Ok(parsed.as_str().trim_end_matches('/').to_string())
 }
 
-fn is_local_host(host: &str) -> bool {
+fn is_allowed_comfyui_host(
+    host: &str,
+    port: Option<u16>,
+    policy: ComfyUIUrlPolicy,
+) -> bool {
+    if policy == ComfyUIUrlPolicy::Any {
+        return true;
+    }
+
+    if is_loopback_host(host) {
+        return true;
+    }
+
+    if policy == ComfyUIUrlPolicy::LocalOnly {
+        return false;
+    }
+
+    let port = port.unwrap_or(80);
+    is_lan_host(host, port)
+}
+
+fn is_loopback_host(host: &str) -> bool {
     matches!(host, "localhost" | "127.0.0.1" | "::1")
+}
+
+fn is_lan_host(host: &str, port: u16) -> bool {
+    if let Ok(ip) = host.parse::<IpAddr>() {
+        return is_lan_ip(ip);
+    }
+
+    let addrs = (host, port).to_socket_addrs();
+    let mut saw_addr = false;
+
+    if let Ok(iter) = addrs {
+        for addr in iter {
+            saw_addr = true;
+            if !is_lan_ip(addr.ip()) {
+                return false;
+            }
+        }
+    }
+
+    saw_addr
+}
+
+fn is_lan_ip(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(v4) => {
+            v4.is_private()
+                || v4.is_loopback()
+                || v4.is_link_local()
+                || is_cgnat(v4)
+        }
+        IpAddr::V6(v6) => v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local(),
+    }
+}
+
+fn is_cgnat(ip: std::net::Ipv4Addr) -> bool {
+    let octets = ip.octets();
+    octets[0] == 100 && (octets[1] & 0b1100_0000) == 0b0100_0000
 }
 
 // ============================================================================
@@ -136,7 +195,7 @@ async fn test_comfyui_handler(
     State(state): State<AppState>,
     Json(request): Json<TestComfyUIRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let url = normalize_comfyui_url(&request.url, state.config.allow_remote_comfyui)?;
+    let url = normalize_comfyui_url(&request.url, state.config.comfyui_url_policy)?;
     let test_url = format!("{}/system_stats", url);
 
     let client = reqwest::Client::builder()
@@ -166,7 +225,7 @@ async fn set_comfyui_url_handler(
     State(state): State<AppState>,
     Json(request): Json<SetComfyUIUrlRequest>,
 ) -> AppResult<Json<serde_json::Value>> {
-    let url = normalize_comfyui_url(&request.url, state.config.allow_remote_comfyui)?;
+    let url = normalize_comfyui_url(&request.url, state.config.comfyui_url_policy)?;
     state.comfyui.set_url(&url).await;
     tracing::info!("ComfyUI URL updated to: {}", url);
     Ok(Json(serde_json::json!({ "success": true, "url": url })))
