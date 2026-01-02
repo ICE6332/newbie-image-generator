@@ -356,7 +356,7 @@ export function ImageGenerator() {
                 {systemPromptOpen ? "▼" : "▶"} System Prompt
               </CardTitle>
               <Badge variant="outline" className="text-xs">
-                {systemPromptOpen ? "点击收起" : "点击展开"}
+                {systemPromptOpen ? "Collapse / 收起" : "Expand / 展开"}
               </Badge>
             </div>
           </CardHeader>
@@ -374,7 +374,7 @@ export function ImageGenerator() {
                 className="mt-2 text-xs"
                 onClick={() => setSystemPrompt(DEFAULT_SYSTEM_PROMPT)}
               >
-                重置为默认
+                重置为默认 / Reset
               </Button>
             </CardContent>
           )}
@@ -383,9 +383,9 @@ export function ImageGenerator() {
         {/* 自然语言描述 */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">自然语言描述</CardTitle>
+            <CardTitle className="text-sm">Caption / 自然语言描述</CardTitle>
             <CardDescription className="text-xs">
-              用自然语言描述画面，会添加到 prompt 最后
+              Describe the scene in natural language / 用自然语言描述画面
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -409,7 +409,9 @@ export function ImageGenerator() {
                 <CardTitle className="flex items-center gap-2">
                   Prompt
                 </CardTitle>
-                <CardDescription>描述你想生成的图像</CardDescription>
+                <CardDescription>
+                  Describe the image you want to generate / 描述你想生成的图像
+                </CardDescription>
               </div>
               <Button
                 variant="outline"
@@ -425,17 +427,19 @@ export function ImageGenerator() {
                   <div
                     className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
                   />
-                  {isConnected ? "已连接后端" : "后端未连接"}
+                  {isConnected
+                    ? "Backend Connected / 已连接后端"
+                    : "Backend Disconnected / 后端未连接"}
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <div
                     className={`w-2 h-2 rounded-full ${comfyuiConnected ? "bg-green-500" : "bg-red-500"}`}
                   />
                   {comfyuiConnected === null
-                    ? "ComfyUI 检测中"
+                    ? "ComfyUI Checking / 检测中"
                     : comfyuiConnected
-                      ? "ComfyUI 已连接"
-                      : "ComfyUI 未连接"}
+                      ? "ComfyUI Connected / 已连接"
+                      : "ComfyUI Disconnected / 未连接"}
                 </div>
                 <div className="space-y-2">
                   <Label>ComfyUI URL</Label>
@@ -451,17 +455,21 @@ export function ImageGenerator() {
                       onClick={handleTestConnection}
                       disabled={testingConnection}
                     >
-                      {testingConnection ? "测试中..." : "测试"}
+                      {testingConnection
+                        ? "Testing... / 测试中..."
+                        : "Test / 测试"}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    ComfyUI 服务器地址，用于加载图片
+                    ComfyUI server address / ComfyUI 服务器地址
                   </p>
                   {testResult && (
                     <p
                       className={`text-xs ${testResult === "success" ? "text-green-500" : "text-red-500"}`}
                     >
-                      {testResult === "success" ? "✓ 连接成功" : "✗ 连接失败"}
+                      {testResult === "success"
+                        ? "✓ Connected / 连接成功"
+                        : "✗ Failed / 连接失败"}
                     </p>
                   )}
                 </div>
@@ -475,8 +483,10 @@ export function ImageGenerator() {
               onValueChange={(v) => setPromptMode(v as "normal" | "structured")}
             >
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="normal">普通模式</TabsTrigger>
-                <TabsTrigger value="structured">结构模式</TabsTrigger>
+                <TabsTrigger value="normal">Normal / 普通模式</TabsTrigger>
+                <TabsTrigger value="structured">
+                  Structured / 结构模式
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="normal" className="space-y-4 mt-4">
@@ -525,7 +535,7 @@ export function ImageGenerator() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Generation Parameters</CardTitle>
+            <CardTitle>Generation Parameters / 生成参数</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-3">
@@ -699,7 +709,7 @@ export function ImageGenerator() {
                   htmlFor="hifix-toggle"
                   className="flex items-center gap-2"
                 >
-                  HiFix Enhancement
+                  HiFix Enhancement / 高清修复
                 </Label>
                 <Switch
                   id="hifix-toggle"
@@ -729,7 +739,7 @@ export function ImageGenerator() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Upscale Method</Label>
+                    <Label>Upscale Method / 放大算法</Label>
                     <Select
                       value={params.hifixUpscaleMethod}
                       onValueChange={(value) =>
@@ -878,7 +888,7 @@ export function ImageGenerator() {
           >
             {isGenerating ? (
               <>
-                Generating
+                Generating / 生成中
                 <span className="inline-flex ml-1">
                   <span className="animate-[bounce_1s_infinite_0ms]">.</span>
                   <span className="animate-[bounce_1s_infinite_200ms]">.</span>
@@ -886,7 +896,7 @@ export function ImageGenerator() {
                 </span>
               </>
             ) : (
-              "Generate"
+              "Generate / 生成"
             )}
           </Button>
           {isGenerating && (
@@ -896,7 +906,7 @@ export function ImageGenerator() {
               variant="destructive"
               onClick={handleInterrupt}
             >
-              Cancel
+              Cancel / 取消
             </Button>
           )}
         </div>
@@ -908,7 +918,7 @@ export function ImageGenerator() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
-                    {currentNode || "Processing..."}
+                    {currentNode || "Processing... / 处理中..."}
                   </span>
                   <span>{Math.round(progress)}%</span>
                 </div>
@@ -922,7 +932,7 @@ export function ImageGenerator() {
         {previewImage && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Preview</CardTitle>
+              <CardTitle className="text-sm">Preview / 预览</CardTitle>
             </CardHeader>
             <CardContent>
               <img
