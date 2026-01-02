@@ -682,7 +682,6 @@ export function ImageGenerator() {
                   <SelectItem value="linear_quadratic">
                     Linear Quadratic
                   </SelectItem>
-                  <SelectItem value="linear">Linear</SelectItem>
                   <SelectItem value="normal">Normal</SelectItem>
                   <SelectItem value="karras">Karras</SelectItem>
                   <SelectItem value="exponential">Exponential</SelectItem>
@@ -847,7 +846,6 @@ export function ImageGenerator() {
                         <SelectItem value="linear_quadratic">
                           Linear Quadratic
                         </SelectItem>
-                        <SelectItem value="linear">Linear</SelectItem>
                         <SelectItem value="normal">Normal</SelectItem>
                         <SelectItem value="karras">Karras</SelectItem>
                         <SelectItem value="exponential">Exponential</SelectItem>
