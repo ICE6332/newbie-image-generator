@@ -49,7 +49,7 @@ HOST=127.0.0.1
 PORT=3000
 COMFYUI_HOST=127.0.0.1
 COMFYUI_PORT=8188
-ALLOW_REMOTE_COMFYUI=false
+ALLOW_REMOTE_COMFYUI=lan  # false|lan|true
 PUBLIC_BASE_URL=http://localhost:3000
 CORS_ORIGINS=http://localhost:3001,http://127.0.0.1:3001
 RUST_LOG=info,tower_http=debug
