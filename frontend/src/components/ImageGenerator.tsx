@@ -44,6 +44,11 @@ interface GenerationParams {
   hifixEnabled: boolean;
   hifixSteps: number;
   hifixCfg: number;
+  hifixDenoise: number;
+  hifixSampler: string;
+  hifixScheduler: string;
+  hifixScale: number;
+  hifixUpscaleMethod: string;
 }
 
 const DEFAULT_NEGATIVE_PROMPT =
@@ -54,18 +59,7 @@ const DEFAULT_SYSTEM_PROMPT =
 
 export function ImageGenerator() {
   const [params, setParams] = useState<GenerationParams>(() => {
-    const saved = localStorage.getItem("generationParams");
-    if (saved) {
-      try {
-        return {
-          ...JSON.parse(saved),
-          negativePrompt: DEFAULT_NEGATIVE_PROMPT,
-        };
-      } catch {
-        // ignore
-      }
-    }
-    return {
+    const defaults: GenerationParams = {
       prompt: "",
       negativePrompt: DEFAULT_NEGATIVE_PROMPT,
       steps: 28,
@@ -77,8 +71,27 @@ export function ImageGenerator() {
       scheduler: "linear_quadratic",
       hifixEnabled: false,
       hifixSteps: 20,
-      hifixCfg: 7,
+      hifixCfg: 4,
+      hifixDenoise: 0.5,
+      hifixSampler: "res_multistep",
+      hifixScheduler: "linear_quadratic",
+      hifixScale: 1.5,
+      hifixUpscaleMethod: "nearest-exact",
     };
+    const saved = localStorage.getItem("generationParams");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          ...defaults,
+          ...parsed,
+          negativePrompt: DEFAULT_NEGATIVE_PROMPT,
+        };
+      } catch {
+        // ignore
+      }
+    }
+    return defaults;
   });
 
   const [promptMode, setPromptMode] = useState<"normal" | "structured">(() => {
@@ -274,6 +287,14 @@ export function ImageGenerator() {
         seed: params.seed,
         sampler_name: params.samplerName,
         scheduler: params.scheduler,
+        hifix_enabled: params.hifixEnabled,
+        hifix_steps: params.hifixSteps,
+        hifix_cfg: params.hifixCfg,
+        hifix_denoise: params.hifixDenoise,
+        hifix_sampler: params.hifixSampler,
+        hifix_scheduler: params.hifixScheduler,
+        hifix_scale: params.hifixScale,
+        hifix_upscale_method: params.hifixUpscaleMethod,
       });
 
       console.log("Prompt queued:", response.prompt_id);
@@ -673,15 +694,12 @@ export function ImageGenerator() {
             <Separator />
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between opacity-50">
+              <div className="flex items-center justify-between">
                 <Label
                   htmlFor="hifix-toggle"
                   className="flex items-center gap-2"
                 >
                   HiFix Enhancement
-                  <Badge variant="outline" className="text-xs">
-                    开发中
-                  </Badge>
                 </Label>
                 <Switch
                   id="hifix-toggle"
@@ -689,7 +707,6 @@ export function ImageGenerator() {
                   onCheckedChange={(checked) =>
                     setParams({ ...params, hifixEnabled: checked })
                   }
-                  disabled
                 />
               </div>
 
@@ -697,7 +714,62 @@ export function ImageGenerator() {
                 <div className="space-y-4 pl-4 border-l-2 border-primary/20">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>HiFix Steps</Label>
+                      <Label>Scale</Label>
+                      <Badge variant="secondary">{params.hifixScale}x</Badge>
+                    </div>
+                    <Slider
+                      value={[params.hifixScale]}
+                      onValueChange={(value) =>
+                        setParams({ ...params, hifixScale: value[0] })
+                      }
+                      min={1}
+                      max={2}
+                      step={0.1}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Upscale Method</Label>
+                    <Select
+                      value={params.hifixUpscaleMethod}
+                      onValueChange={(value) =>
+                        setParams({ ...params, hifixUpscaleMethod: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nearest-exact">
+                          Nearest Exact
+                        </SelectItem>
+                        <SelectItem value="bilinear">Bilinear</SelectItem>
+                        <SelectItem value="bicubic">Bicubic</SelectItem>
+                        <SelectItem value="bislerp">Bislerp</SelectItem>
+                        <SelectItem value="area">Area</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Denoise</Label>
+                      <Badge variant="secondary">{params.hifixDenoise}</Badge>
+                    </div>
+                    <Slider
+                      value={[params.hifixDenoise]}
+                      onValueChange={(value) =>
+                        setParams({ ...params, hifixDenoise: value[0] })
+                      }
+                      min={0.1}
+                      max={1}
+                      step={0.05}
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Steps</Label>
                       <Badge variant="secondary">{params.hifixSteps}</Badge>
                     </div>
                     <Slider
@@ -713,7 +785,7 @@ export function ImageGenerator() {
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>HiFix CFG</Label>
+                      <Label>CFG</Label>
                       <Badge variant="secondary">{params.hifixCfg}</Badge>
                     </div>
                     <Slider
@@ -725,6 +797,63 @@ export function ImageGenerator() {
                       max={20}
                       step={0.5}
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Sampler</Label>
+                    <Select
+                      value={params.hifixSampler}
+                      onValueChange={(value) =>
+                        setParams({ ...params, hifixSampler: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="res_multistep">
+                          Res Multistep
+                        </SelectItem>
+                        <SelectItem value="res_momentumized">
+                          Res Momentumized
+                        </SelectItem>
+                        <SelectItem value="euler">Euler</SelectItem>
+                        <SelectItem value="euler_ancestral">
+                          Euler Ancestral
+                        </SelectItem>
+                        <SelectItem value="dpmpp_2m">DPM++ 2M</SelectItem>
+                        <SelectItem value="dpmpp_2m_sde">
+                          DPM++ 2M SDE
+                        </SelectItem>
+                        <SelectItem value="dpmpp_3m_sde">
+                          DPM++ 3M SDE
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Scheduler</Label>
+                    <Select
+                      value={params.hifixScheduler}
+                      onValueChange={(value) =>
+                        setParams({ ...params, hifixScheduler: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="linear_quadratic">
+                          Linear Quadratic
+                        </SelectItem>
+                        <SelectItem value="linear">Linear</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="karras">Karras</SelectItem>
+                        <SelectItem value="exponential">Exponential</SelectItem>
+                        <SelectItem value="sgm_uniform">SGM Uniform</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               )}

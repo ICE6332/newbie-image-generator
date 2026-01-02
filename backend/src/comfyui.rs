@@ -355,7 +355,14 @@ impl ComfyUIClient {
             format!("<danbooru_tags>{}</danbooru_tags>", request.negative_prompt)
         };
 
-        json!({
+        // VAEDecode input: from HiFix KSampler if enabled, otherwise from first KSampler
+        let vae_decode_input = if request.hifix_enabled {
+            json!(["101", 0])
+        } else {
+            json!(["3", 0])
+        };
+
+        let mut workflow = json!({
             "3": {
                 "inputs": {
                     "seed": seed,
@@ -374,7 +381,7 @@ impl ComfyUIClient {
             },
             "4": {
                 "inputs": {
-                    "samples": ["3", 0],
+                    "samples": vae_decode_input,
                     "vae": ["5", 0]
                 },
                 "class_type": "VAEDecode",
@@ -453,7 +460,44 @@ impl ComfyUIClient {
                 "class_type": "CLIPTextEncode",
                 "_meta": {"title": "CLIP文本编码器"}
             }
-        })
+        });
+
+        // Add HiFix nodes if enabled
+        if request.hifix_enabled {
+            let hifix_width = (request.width as f32 * request.hifix_scale) as u32;
+            let hifix_height = (request.height as f32 * request.hifix_scale) as u32;
+
+            workflow["100"] = json!({
+                "inputs": {
+                    "upscale_method": request.hifix_upscale_method,
+                    "width": hifix_width,
+                    "height": hifix_height,
+                    "crop": "disabled",
+                    "samples": ["3", 0]
+                },
+                "class_type": "LatentUpscale",
+                "_meta": {"title": "Latent放大"}
+            });
+
+            workflow["101"] = json!({
+                "inputs": {
+                    "seed": seed,
+                    "steps": request.hifix_steps,
+                    "cfg": request.hifix_cfg,
+                    "sampler_name": request.hifix_sampler,
+                    "scheduler": request.hifix_scheduler,
+                    "denoise": request.hifix_denoise,
+                    "model": ["51", 0],
+                    "positive": ["61", 0],
+                    "negative": ["59", 0],
+                    "latent_image": ["100", 0]
+                },
+                "class_type": "KSampler",
+                "_meta": {"title": "HiFix采样器"}
+            });
+        }
+
+        workflow
     }
 }
 
