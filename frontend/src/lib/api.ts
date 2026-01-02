@@ -40,12 +40,9 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  // Health check (note: /health is at root, not under /api)
+  // Health check (served under /api/health to work with dev proxy)
   async health(): Promise<HealthResponse> {
-    const base = API_BASE.replace(/\/api$/, "");
-    const response = await fetch(`${base}/health`);
-    if (!response.ok) throw new Error("Health check failed");
-    return response.json();
+    return request("/health");
   },
 
   // System status

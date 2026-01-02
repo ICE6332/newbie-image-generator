@@ -44,6 +44,7 @@ pub fn create_router(state: AppState) -> Router {
     Router::new()
         // Health and status endpoints
         .route("/health", get(health_handler))
+        .route("/api/health", get(health_handler))
         .route("/api/status", get(status_handler))
         .route("/api/test-comfyui", post(test_comfyui_handler))
         .route(
