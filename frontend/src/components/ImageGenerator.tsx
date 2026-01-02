@@ -27,7 +27,7 @@ import { GeneratedImages } from "./GeneratedImages";
 import { StructuredPrompt } from "./StructuredPrompt";
 import { XMLImport, type ParsedXML } from "./XMLImport";
 import { api } from "@/lib/api";
-import { getComfyUIUrl, setComfyUIUrl } from "@/lib/config";
+import { useComfyUIConnection } from "@/hooks/useComfyUIConnection";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import type { ImageResult, WSMessage } from "@/lib/types";
 
@@ -126,15 +126,15 @@ export function ImageGenerator() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [generatedImages, setGeneratedImages] = useState<ImageResult[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [comfyuiUrl, setComfyuiUrlState] = useState(getComfyUIUrl());
-  const [comfyuiConnected, setComfyuiConnected] = useState<boolean | null>(
-    null,
-  );
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [testingConnection, setTestingConnection] = useState(false);
-  const [testResult, setTestResult] = useState<"success" | "error" | null>(
-    null,
-  );
+  const {
+    comfyuiUrl,
+    comfyuiConnected,
+    testingConnection,
+    testResult,
+    updateComfyUIUrl,
+    testConnection,
+  } = useComfyUIConnection();
 
   // 保存到 localStorage
   useEffect(() => {
@@ -152,61 +152,6 @@ export function ImageGenerator() {
   useEffect(() => {
     localStorage.setItem("generationParams", JSON.stringify(params));
   }, [params]);
-
-  // Sync ComfyUI URL with backend on mount
-  useEffect(() => {
-    const syncUrl = async () => {
-      try {
-        const localUrl = getComfyUIUrl();
-        await api.setComfyUIUrl(localUrl);
-      } catch {
-        // Backend might not be available yet
-      }
-    };
-    syncUrl();
-  }, []);
-
-  const checkComfyUIHealth = useCallback(async () => {
-    try {
-      const health = await api.health();
-      setComfyuiConnected(health.comfyui);
-    } catch {
-      setComfyuiConnected(false);
-    }
-  }, []);
-
-  const handleComfyUIUrlChange = async (url: string) => {
-    setComfyuiUrlState(url);
-    setComfyUIUrl(url);
-    // Sync with backend
-    try {
-      await api.setComfyUIUrl(url);
-      await checkComfyUIHealth();
-    } catch {
-      // Ignore errors - backend might not be available yet
-    }
-  };
-
-  const handleTestConnection = async () => {
-    setTestingConnection(true);
-    setTestResult(null);
-    handleComfyUIUrlChange(comfyuiUrl);
-    try {
-      let url = comfyuiUrl.trim();
-      if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
-        url = `http://${url}`;
-      }
-      const result = await api.testComfyUI(url);
-      setTestResult(result.success ? "success" : "error");
-      setComfyuiConnected(result.success);
-    } catch {
-      setTestResult("error");
-      setComfyuiConnected(false);
-    } finally {
-      setTestingConnection(false);
-      setTimeout(() => setTestResult(null), 3000);
-    }
-  };
 
   const handleWSMessage = useCallback((message: WSMessage) => {
     switch (message.type) {
@@ -245,14 +190,6 @@ export function ImageGenerator() {
   const { isConnected } = useWebSocket({
     onMessage: handleWSMessage,
   });
-
-  useEffect(() => {
-    checkComfyUIHealth();
-    const interval = window.setInterval(() => {
-      checkComfyUIHealth();
-    }, 5000);
-    return () => window.clearInterval(interval);
-  }, [checkComfyUIHealth]);
 
   // 构建最终 prompt
   const handleGenerate = async () => {
@@ -435,13 +372,13 @@ export function ImageGenerator() {
                   <div className="flex gap-2">
                     <Input
                       value={comfyuiUrl}
-                      onChange={(e) => handleComfyUIUrlChange(e.target.value)}
+                      onChange={(e) => updateComfyUIUrl(e.target.value)}
                       placeholder="http://127.0.0.1:8188"
                     />
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleTestConnection}
+                      onClick={testConnection}
                       disabled={testingConnection}
                     >
                       {testingConnection ? "测试中..." : "测试"}
