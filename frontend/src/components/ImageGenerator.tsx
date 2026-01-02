@@ -255,12 +255,6 @@ export function ImageGenerator() {
   }, [checkComfyUIHealth]);
 
   // 构建最终 prompt
-  const buildFinalPrompt = (): string => {
-    const userPrompt =
-      promptMode === "normal" ? params.prompt : structuredPrompt;
-    return `${systemPrompt}\n<Prompt Start>,${userPrompt}`;
-  };
-
   const handleGenerate = async () => {
     const userPrompt =
       promptMode === "normal" ? params.prompt : structuredPrompt;
@@ -274,11 +268,10 @@ export function ImageGenerator() {
     setError(null);
     setPreviewImage(null);
 
-    const finalPrompt = buildFinalPrompt();
-
     try {
       const response = await api.generate({
-        prompt: finalPrompt,
+        prompt: userPrompt,
+        system_prompt: systemPrompt,
         negative_prompt: params.negativePrompt,
         width: params.width,
         height: params.height,

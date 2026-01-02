@@ -78,15 +78,17 @@ async fn main() {
     let url = format!("http://localhost:{}", port);
     tracing::info!("Server running at {}", url);
 
-    // Open browser
-    #[cfg(target_os = "windows")]
-    let _ = std::process::Command::new("cmd")
-        .args(["/C", "start", &url])
-        .spawn();
-    #[cfg(target_os = "macos")]
-    let _ = std::process::Command::new("open").arg(&url).spawn();
-    #[cfg(target_os = "linux")]
-    let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
+    // Open browser only in release builds (skip during dev)
+    if cfg!(not(debug_assertions)) {
+        #[cfg(target_os = "windows")]
+        let _ = std::process::Command::new("cmd")
+            .args(["/C", "start", &url])
+            .spawn();
+        #[cfg(target_os = "macos")]
+        let _ = std::process::Command::new("open").arg(&url).spawn();
+        #[cfg(target_os = "linux")]
+        let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
+    }
 
     axum::serve(listener, app).await.expect("Server crashed");
 }

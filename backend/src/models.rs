@@ -10,6 +10,8 @@ use std::collections::HashMap;
 pub struct GenerateRequest {
     /// Positive prompt text
     pub prompt: String,
+    /// Optional system prompt to prefix before user prompt
+    pub system_prompt: Option<String>,
     /// Negative prompt text
     #[serde(default)]
     pub negative_prompt: String,

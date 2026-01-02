@@ -148,7 +148,7 @@ async fn generate_handler(
     );
 
     // Validate request
-    if request.prompt.is_empty() {
+    if request.prompt.trim().is_empty() {
         return Err(AppError::InvalidRequest(
             "Prompt cannot be empty".to_string(),
         ));

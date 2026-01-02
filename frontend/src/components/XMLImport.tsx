@@ -37,7 +37,9 @@ interface XMLImportProps {
 }
 
 function parseTag(xml: string, tag: string): string {
-  const match = xml.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
+  const match = xml.match(
+    new RegExp(`<${tag}\\s*>([\\s\\S]*?)</${tag}\\s*>`, "i"),
+  );
   return match ? match[1].trim() : "";
 }
 
@@ -101,13 +103,29 @@ export function parseXML(xml: string): ParsedXML {
   };
 
   // 2. 提取自然语言：移除所有已识别的结构化内容，剩余的就是自然语言
-  const caption = content
+  let caption = content
     // 移除所有 character 块
     .replace(/<character[_ ]\d+>[\s\S]*?<\/character[_ ]\d+>/gi, "")
     // 移除 general_tags 块
     .replace(/<general_tags>[\s\S]*?<\/general_tags>/gi, "")
     .replace(/<general tags>[\s\S]*?<\/general tags>/gi, "")
     // 清理多余空白
+    .trim();
+
+  const captionFromTag = parseTag(content, "caption");
+  const contentWithoutCaption = content.replace(
+    /<caption[\s\S]*?>[\s\S]*?<\/caption>/gi,
+    "",
+  );
+
+  caption = (captionFromTag || contentWithoutCaption)
+    // 移除 <characters> 包裹层
+    .replace(/<\/?characters[^>]*>/gi, "")
+    // 移除所有 character 块
+    .replace(/<character[_ ]\d+>[\s\S]*?<\/character[_ ]\d+>/gi, "")
+    // 移除 general_tags 块
+    .replace(/<general_tags>[\s\S]*?<\/general_tags>/gi, "")
+    .replace(/<general tags>[\s\S]*?<\/general tags>/gi, "")
     .trim();
 
   return {
