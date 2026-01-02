@@ -32,6 +32,7 @@
 - **Automatic XML Generation** - No need to write XML manually, focus on prompt content itself
 - **XML Import** - Import existing XML prompts, automatically parse and populate corresponding text fields
 - **Real-time Preview** - Display generation progress in real-time
+- **HiFix** – Secondary Upscaling for High-Resolution Image Refinement
 - **One-click Model Download** - Built-in aria2c multi-threaded download with resume support
 - **Clean & Beautiful** - Modern UI design, simple and intuitive
 - **Theme Switching** - Dark/Light theme support
