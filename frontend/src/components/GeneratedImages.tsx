@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { ImageResult } from "@/lib/types";
-import { getImageUrl } from "@/lib/config";
+import { api } from "@/lib/api";
 
 interface GeneratedImagesProps {
   images: ImageResult[];
@@ -23,7 +23,7 @@ export function GeneratedImages({
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
   const getUrl = (image: ImageResult) =>
-    getImageUrl(image.filename, image.subfolder, image.type);
+    api.getImageUrl(image.filename, image.subfolder, image.type);
 
   const handleDownload = async (image: ImageResult) => {
     try {
