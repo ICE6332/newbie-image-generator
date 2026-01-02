@@ -110,10 +110,11 @@ bun run dev
 `backend/.env` を編集：
 
 ```env
-HOST=0.0.0.0
+HOST=127.0.0.1
 PORT=3000
 COMFYUI_HOST=127.0.0.1
 COMFYUI_PORT=8188
+ALLOW_REMOTE_COMFYUI=false
 ```
 
 ## 技術スタック

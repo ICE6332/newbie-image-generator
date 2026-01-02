@@ -6,12 +6,15 @@ use axum::{
 };
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use futures::{SinkExt, StreamExt};
+use reqwest::Url;
 use serde::Deserialize;
+use std::sync::Arc;
 use tokio::sync::broadcast;
 use tower_http::services::{ServeDir, ServeFile};
 use uuid::Uuid;
 
 use crate::comfyui::ComfyUIClient;
+use crate::config::Config;
 use crate::error::{AppError, AppResult};
 use crate::models::*;
 
@@ -21,6 +24,7 @@ pub struct AppState {
     pub comfyui: ComfyUIClient,
     pub event_tx: broadcast::Sender<String>,
     pub comfyui_client_id: String,
+    pub config: Arc<Config>,
 }
 
 /// Create the API router
@@ -61,6 +65,55 @@ pub fn create_router(state: AppState) -> Router {
         .fallback_service(serve_dir)
 }
 
+fn normalize_comfyui_url(raw: &str, allow_remote: bool) -> AppResult<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::InvalidRequest(
+            "ComfyUI URL cannot be empty".to_string(),
+        ));
+    }
+
+    let candidate = trimmed.trim_end_matches('/');
+    let parsed = if candidate.starts_with("http://") || candidate.starts_with("https://") {
+        Url::parse(candidate)
+    } else {
+        Url::parse(&format!("http://{}", candidate))
+    }
+    .map_err(|_| AppError::InvalidRequest("Invalid ComfyUI URL".to_string()))?;
+
+    match parsed.scheme() {
+        "http" | "https" => {}
+        _ => {
+            return Err(AppError::InvalidRequest(
+                "ComfyUI URL must start with http:// or https://".to_string(),
+            ))
+        }
+    }
+
+    if parsed.path() != "" && parsed.path() != "/" {
+        return Err(AppError::InvalidRequest(
+            "ComfyUI URL must not include a path".to_string(),
+        ));
+    }
+
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| AppError::InvalidRequest("ComfyUI URL missing host".to_string()))?;
+
+    if !allow_remote && !is_local_host(host) {
+        return Err(AppError::InvalidRequest(
+            "Remote ComfyUI URLs are disabled. Set ALLOW_REMOTE_COMFYUI=true to allow."
+                .to_string(),
+        ));
+    }
+
+    Ok(parsed.as_str().trim_end_matches('/').to_string())
+}
+
+fn is_local_host(host: &str) -> bool {
+    matches!(host, "localhost" | "127.0.0.1" | "::1")
+}
+
 // ============================================================================
 // Health and Status Handlers
 // ============================================================================
@@ -79,8 +132,11 @@ struct TestComfyUIRequest {
     url: String,
 }
 
-async fn test_comfyui_handler(Json(request): Json<TestComfyUIRequest>) -> Json<serde_json::Value> {
-    let url = request.url.trim_end_matches('/');
+async fn test_comfyui_handler(
+    State(state): State<AppState>,
+    Json(request): Json<TestComfyUIRequest>,
+) -> AppResult<Json<serde_json::Value>> {
+    let url = normalize_comfyui_url(&request.url, state.config.allow_remote_comfyui)?;
     let test_url = format!("{}/system_stats", url);
 
     let client = reqwest::Client::builder()
@@ -88,10 +144,12 @@ async fn test_comfyui_handler(Json(request): Json<TestComfyUIRequest>) -> Json<s
         .build()
         .unwrap();
 
-    match client.get(&test_url).send().await {
-        Ok(resp) if resp.status().is_success() => Json(serde_json::json!({ "success": true })),
-        _ => Json(serde_json::json!({ "success": false })),
-    }
+    let success = match client.get(&test_url).send().await {
+        Ok(resp) if resp.status().is_success() => true,
+        _ => false,
+    };
+
+    Ok(Json(serde_json::json!({ "success": success })))
 }
 
 async fn get_comfyui_url_handler(State(state): State<AppState>) -> Json<serde_json::Value> {
@@ -107,11 +165,11 @@ struct SetComfyUIUrlRequest {
 async fn set_comfyui_url_handler(
     State(state): State<AppState>,
     Json(request): Json<SetComfyUIUrlRequest>,
-) -> Json<serde_json::Value> {
-    let url = request.url.trim_end_matches('/');
-    state.comfyui.set_url(url).await;
+) -> AppResult<Json<serde_json::Value>> {
+    let url = normalize_comfyui_url(&request.url, state.config.allow_remote_comfyui)?;
+    state.comfyui.set_url(&url).await;
     tracing::info!("ComfyUI URL updated to: {}", url);
-    Json(serde_json::json!({ "success": true, "url": url }))
+    Ok(Json(serde_json::json!({ "success": true, "url": url })))
 }
 
 async fn status_handler(State(state): State<AppState>) -> AppResult<Json<serde_json::Value>> {
