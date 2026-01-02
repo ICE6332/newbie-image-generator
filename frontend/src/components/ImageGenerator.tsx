@@ -530,7 +530,7 @@ export function ImageGenerator() {
           <CardContent className="space-y-6">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>Steps</Label>
+                <Label>Steps 步数</Label>
                 <Badge variant="secondary">{params.steps}</Badge>
               </div>
               <Slider
@@ -548,7 +548,7 @@ export function ImageGenerator() {
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>CFG Scale</Label>
+                <Label>CFG Scale 引导系数</Label>
                 <Badge variant="secondary">{params.cfgScale}</Badge>
               </div>
               <Slider
@@ -566,7 +566,7 @@ export function ImageGenerator() {
 
             <div className="flex items-end gap-2">
               <div className="flex-1 space-y-2">
-                <Label>Width</Label>
+                <Label>Width 宽度</Label>
                 <Input
                   type="number"
                   value={params.width}
@@ -595,7 +595,7 @@ export function ImageGenerator() {
                 ⇄
               </Button>
               <div className="flex-1 space-y-2">
-                <Label>Height</Label>
+                <Label>Height 高度</Label>
                 <Input
                   type="number"
                   value={params.height}
@@ -615,7 +615,7 @@ export function ImageGenerator() {
             <Separator />
 
             <div className="space-y-2">
-              <Label>Seed</Label>
+              <Label>Seed 种子</Label>
               <div className="flex gap-2">
                 <Input
                   type="number"
@@ -641,7 +641,7 @@ export function ImageGenerator() {
             <Separator />
 
             <div className="space-y-2">
-              <Label>Sampler</Label>
+              <Label>Sampler 采样器</Label>
               <Select
                 value={params.samplerName}
                 onValueChange={(value) =>
@@ -668,7 +668,7 @@ export function ImageGenerator() {
             </div>
 
             <div className="space-y-2">
-              <Label>Scheduler</Label>
+              <Label>Scheduler 调度器</Label>
               <Select
                 value={params.scheduler}
                 onValueChange={(value) =>
@@ -682,7 +682,6 @@ export function ImageGenerator() {
                   <SelectItem value="linear_quadratic">
                     Linear Quadratic
                   </SelectItem>
-                  <SelectItem value="linear">Linear</SelectItem>
                   <SelectItem value="normal">Normal</SelectItem>
                   <SelectItem value="karras">Karras</SelectItem>
                   <SelectItem value="exponential">Exponential</SelectItem>
@@ -699,7 +698,7 @@ export function ImageGenerator() {
                   htmlFor="hifix-toggle"
                   className="flex items-center gap-2"
                 >
-                  HiFix Enhancement
+                  HiFix Enhancement 高清修复
                 </Label>
                 <Switch
                   id="hifix-toggle"
@@ -714,7 +713,7 @@ export function ImageGenerator() {
                 <div className="space-y-4 pl-4 border-l-2 border-primary/20">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Scale</Label>
+                      <Label>Scale 放大倍数</Label>
                       <Badge variant="secondary">{params.hifixScale}x</Badge>
                     </div>
                     <Slider
@@ -729,7 +728,7 @@ export function ImageGenerator() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Upscale Method</Label>
+                    <Label>Upscale Method 放大算法</Label>
                     <Select
                       value={params.hifixUpscaleMethod}
                       onValueChange={(value) =>
@@ -753,7 +752,7 @@ export function ImageGenerator() {
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Denoise</Label>
+                      <Label>Denoise 降噪强度</Label>
                       <Badge variant="secondary">{params.hifixDenoise}</Badge>
                     </div>
                     <Slider
@@ -769,7 +768,7 @@ export function ImageGenerator() {
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>Steps</Label>
+                      <Label>Steps 步数</Label>
                       <Badge variant="secondary">{params.hifixSteps}</Badge>
                     </div>
                     <Slider
@@ -785,7 +784,7 @@ export function ImageGenerator() {
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Label>CFG</Label>
+                      <Label>CFG 引导系数</Label>
                       <Badge variant="secondary">{params.hifixCfg}</Badge>
                     </div>
                     <Slider
@@ -800,7 +799,7 @@ export function ImageGenerator() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Sampler</Label>
+                    <Label>Sampler 采样器</Label>
                     <Select
                       value={params.hifixSampler}
                       onValueChange={(value) =>
@@ -833,7 +832,7 @@ export function ImageGenerator() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Scheduler</Label>
+                    <Label>Scheduler 调度器</Label>
                     <Select
                       value={params.hifixScheduler}
                       onValueChange={(value) =>
@@ -847,7 +846,6 @@ export function ImageGenerator() {
                         <SelectItem value="linear_quadratic">
                           Linear Quadratic
                         </SelectItem>
-                        <SelectItem value="linear">Linear</SelectItem>
                         <SelectItem value="normal">Normal</SelectItem>
                         <SelectItem value="karras">Karras</SelectItem>
                         <SelectItem value="exponential">Exponential</SelectItem>
