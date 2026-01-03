@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::error::{AppError, AppResult};
 use crate::models::*;
-use reqwest::Client;
+use reqwest::{Client, Url};
 use serde_json::{json, Value};
 use std::sync::Arc;
 
@@ -196,15 +196,14 @@ impl ComfyUIClient {
         subfolder: &str,
         image_type: &str,
     ) -> AppResult<Vec<u8>> {
-        let url = format!(
-            "{}/view?filename={}&subfolder={}&type={}",
-            self.base_url().await,
-            filename,
-            subfolder,
-            image_type
-        );
+        let mut url = Url::parse(&format!("{}/view", self.base_url().await))
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        url.query_pairs_mut()
+            .append_pair("filename", filename)
+            .append_pair("subfolder", subfolder)
+            .append_pair("type", image_type);
 
-        let resp = self.client.get(&url).send().await?;
+        let resp = self.client.get(url).send().await?;
 
         if !resp.status().is_success() {
             return Err(AppError::ComfyUIApi(format!(
@@ -498,11 +497,7 @@ impl ComfyUIClient {
 
 fn compose_positive_prompt(request: &GenerateRequest) -> String {
     let user_prompt = normalize_prompt(&request.prompt);
-    let system_prompt = request
-        .system_prompt
-        .as_deref()
-        .unwrap_or("")
-        .trim();
+    let system_prompt = request.system_prompt.as_deref().unwrap_or("").trim();
 
     if system_prompt.is_empty() {
         format!("<Prompt Start>,{}", user_prompt)
@@ -522,11 +517,9 @@ fn normalize_prompt(raw: &str) -> String {
 
     // If the user already pasted a Prompt Start header, remove it to avoid duplication.
     let prompt_start = "<prompt start>";
-    if s.len() >= prompt_start.len() && s[..prompt_start.len()].eq_ignore_ascii_case(prompt_start)
-    {
-        s = s[prompt_start.len()..].trim_start_matches(|c: char| {
-            c.is_whitespace() || c == ',' || c == ':'
-        });
+    if s.len() >= prompt_start.len() && s[..prompt_start.len()].eq_ignore_ascii_case(prompt_start) {
+        s = s[prompt_start.len()..]
+            .trim_start_matches(|c: char| c.is_whitespace() || c == ',' || c == ':');
     }
 
     let s = s.trim();

@@ -56,7 +56,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/queue", get(queue_handler))
         .route("/api/history/{prompt_id}", get(history_handler))
         // Image endpoints
-        .route("/api/images/{filename}", get(image_handler))
+        .route("/api/images/*filename", get(image_handler))
         // Control endpoints
         .route("/api/interrupt", post(interrupt_handler))
         .route("/api/clear", post(clear_handler))
@@ -112,11 +112,7 @@ fn normalize_comfyui_url(raw: &str, policy: ComfyUIUrlPolicy) -> AppResult<Strin
     Ok(parsed.as_str().trim_end_matches('/').to_string())
 }
 
-fn is_allowed_comfyui_host(
-    host: &str,
-    port: Option<u16>,
-    policy: ComfyUIUrlPolicy,
-) -> bool {
+fn is_allowed_comfyui_host(host: &str, port: Option<u16>, policy: ComfyUIUrlPolicy) -> bool {
     if policy == ComfyUIUrlPolicy::Any {
         return true;
     }
@@ -159,12 +155,7 @@ fn is_lan_host(host: &str, port: u16) -> bool {
 
 fn is_lan_ip(ip: IpAddr) -> bool {
     match ip {
-        IpAddr::V4(v4) => {
-            v4.is_private()
-                || v4.is_loopback()
-                || v4.is_link_local()
-                || is_cgnat(v4)
-        }
+        IpAddr::V4(v4) => v4.is_private() || v4.is_loopback() || v4.is_link_local() || is_cgnat(v4),
         IpAddr::V6(v6) => v6.is_loopback() || v6.is_unique_local() || v6.is_unicast_link_local(),
     }
 }

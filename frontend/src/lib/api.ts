@@ -70,7 +70,10 @@ export const api = {
 
   // Get image URL
   getImageUrl(filename: string, subfolder = "", type = "output"): string {
-    return `${API_BASE}/images/${filename}?subfolder=${subfolder}&type=${type}`;
+    const encodedFilename = encodeURIComponent(filename);
+    const encodedSubfolder = encodeURIComponent(subfolder);
+    const encodedType = encodeURIComponent(type);
+    return `${API_BASE}/images/${encodedFilename}?subfolder=${encodedSubfolder}&type=${encodedType}`;
   },
 
   // Interrupt current generation
