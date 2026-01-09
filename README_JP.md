@@ -76,6 +76,8 @@ HuggingFace からモデルファイルをダウンロード：
 | VAE (newbie-image.safetensors) | [ダウンロード](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/vae/diffusion_pytorch_model.safetensors) | `ComfyUI/models/vae/` |
 | UNet (transformer) | [ダウンロード](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/transformer/diffusion_pytorch_model.safetensors) | `ComfyUI/models/unet/` |
 
+> 手動でモデルをダウンロードした場合は、モデルのファイル名を必ず括弧内の名前と同じに変更してください。そうしないと、バックエンドがモデルを検出できません。
+
 ### 3. アプリケーションの起動
 
 1. ComfyUI が実行中であることを確認（デフォルト `127.0.0.1:8188`）
