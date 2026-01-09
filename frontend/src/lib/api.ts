@@ -58,6 +58,11 @@ export const api = {
     });
   },
 
+  // Get available LoRAs
+  async getLoras(): Promise<string[]> {
+    return request("/loras");
+  },
+
   // Get queue status
   async queue(): Promise<QueueStatus> {
     return request("/queue");

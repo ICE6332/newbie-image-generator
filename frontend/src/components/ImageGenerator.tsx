@@ -29,7 +29,7 @@ import { XMLImport, type ParsedXML } from "./XMLImport";
 import { api } from "@/lib/api";
 import { useComfyUIConnection } from "@/hooks/useComfyUIConnection";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import type { ImageResult, WSMessage } from "@/lib/types";
+import type { ImageResult, WSMessage, LoraConfig } from "@/lib/types";
 
 interface GenerationParams {
   prompt: string;
@@ -41,6 +41,7 @@ interface GenerationParams {
   seed: number;
   samplerName: string;
   scheduler: string;
+  loras: LoraConfig[];
   hifixEnabled: boolean;
   hifixSteps: number;
   hifixCfg: number;
@@ -69,6 +70,7 @@ export function ImageGenerator() {
       seed: -1,
       samplerName: "res_multistep",
       scheduler: "linear_quadratic",
+      loras: [],
       hifixEnabled: false,
       hifixSteps: 20,
       hifixCfg: 4,
@@ -127,6 +129,8 @@ export function ImageGenerator() {
   const [generatedImages, setGeneratedImages] = useState<ImageResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [availableLoras, setAvailableLoras] = useState<string[]>([]);
+  const [loraOpen, setLoraOpen] = useState(false);
   const {
     comfyuiUrl,
     comfyuiConnected,
@@ -152,6 +156,14 @@ export function ImageGenerator() {
   useEffect(() => {
     localStorage.setItem("generationParams", JSON.stringify(params));
   }, [params]);
+
+  // Fetch available LoRAs
+  useEffect(() => {
+    api
+      .getLoras()
+      .then(setAvailableLoras)
+      .catch(() => {});
+  }, []);
 
   const handleWSMessage = useCallback((message: WSMessage) => {
     switch (message.type) {
@@ -217,6 +229,7 @@ export function ImageGenerator() {
         seed: params.seed,
         sampler_name: params.samplerName,
         scheduler: params.scheduler,
+        loras: params.loras.length > 0 ? params.loras : undefined,
         hifix_enabled: params.hifixEnabled,
         hifix_steps: params.hifixSteps,
         hifix_cfg: params.hifixCfg,
@@ -618,6 +631,100 @@ export function ImageGenerator() {
                   <SelectItem value="sgm_uniform">SGM Uniform</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <Separator />
+
+            {/* LoRA Section */}
+            <div className="space-y-4">
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setLoraOpen(!loraOpen)}
+              >
+                <Label className="flex items-center gap-2 cursor-pointer">
+                  {loraOpen ? "▼" : "▶"} LoRA
+                  {params.loras.length > 0 && (
+                    <Badge variant="secondary">{params.loras.length}</Badge>
+                  )}
+                </Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setParams({
+                      ...params,
+                      loras: [...params.loras, { name: "", strength: 1.0 }],
+                    });
+                    setLoraOpen(true);
+                  }}
+                >
+                  + 添加
+                </Button>
+              </div>
+
+              {loraOpen && params.loras.length > 0 && (
+                <div className="space-y-3 pl-4 border-l-2 border-primary/20">
+                  {params.loras.map((lora, index) => (
+                    <div key={index} className="space-y-2 p-2 rounded border">
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={lora.name}
+                          onValueChange={(value) => {
+                            const newLoras = [...params.loras];
+                            newLoras[index].name = value;
+                            setParams({ ...params, loras: newLoras });
+                          }}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="选择 LoRA" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableLoras.map((name) => (
+                              <SelectItem key={name} value={name}>
+                                {name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newLoras = params.loras.filter(
+                              (_, i) => i !== index,
+                            );
+                            setParams({ ...params, loras: newLoras });
+                          }}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs w-16">强度</Label>
+                        <Slider
+                          value={[lora.strength]}
+                          onValueChange={(value) => {
+                            const newLoras = [...params.loras];
+                            newLoras[index].strength = value[0];
+                            setParams({ ...params, loras: newLoras });
+                          }}
+                          min={-4}
+                          max={4}
+                          step={0.1}
+                          className="flex-1"
+                        />
+                        <Badge
+                          variant="outline"
+                          className="w-12 justify-center"
+                        >
+                          {lora.strength.toFixed(1)}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <Separator />
