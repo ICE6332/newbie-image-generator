@@ -317,6 +317,22 @@ impl ComfyUIClient {
                 .collect();
         }
 
+        // Get LoRA models (try NewBieLoraLoader first, fallback to LoraLoader)
+        let lora_list = info
+            .get("NewBieLoraLoader")
+            .or_else(|| info.get("LoraLoader"))
+            .and_then(|v| v.get("input"))
+            .and_then(|v| v.get("required"))
+            .and_then(|v| v.get("lora_name"))
+            .and_then(|v| v.get(0))
+            .and_then(|v| v.as_array());
+        if let Some(list) = lora_list {
+            models.lora = list
+                .iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect();
+        }
+
         Ok(models)
     }
 

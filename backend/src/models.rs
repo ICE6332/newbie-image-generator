@@ -399,6 +399,7 @@ pub struct AvailableModels {
     pub unet: Vec<String>,
     pub clip: Vec<String>,
     pub vae: Vec<String>,
+    pub lora: Vec<String>,
 }
 
 /// Find a model file by keywords (tries each in order, case-insensitive)
