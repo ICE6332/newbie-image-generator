@@ -75,9 +75,11 @@ Download model files from HuggingFace:
 | gemma3-4b-it.safetensors | [Download](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/text_encoder/gemma3-4b-it.safetensors) | `ComfyUI/models/clip/` |
 | jina-clip-v2.safetensors | [Download](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/clip_model/jina-clip-v2.safetensors) | `ComfyUI/models/clip/` |
 | VAE (newbie-image.safetensors) | [Download](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/vae/diffusion_pytorch_model.safetensors) | `ComfyUI/models/vae/` |
-| UNet (transformer) | [Download](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/transformer/diffusion_pytorch_model.safetensors) | `ComfyUI/models/unet/` |
+| UNet (NewBie-image-v0.1-exp-ep9.safetensors) | [Download](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/transformer/diffusion_pytorch_model.safetensors) | `ComfyUI/models/unet/` |
 
 > For users in China: Replace `huggingface.co` with `hf-mirror.com`
+> If you downloaded the model manually, please rename the model file to match the name inside the parentheses; otherwise, the backend will not be able to detect it.
+
 
 ### 3. Launch Application
 
