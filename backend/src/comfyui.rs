@@ -412,14 +412,6 @@ impl ComfyUIClient {
                 "class_type": "PreviewImage",
                 "_meta": {"title": "预览图像"}
             },
-            "51": {
-                "inputs": {
-                    "multiplier": 0.9,
-                    "model": ["54", 0]
-                },
-                "class_type": "RescaleCFG",
-                "_meta": {"title": "缩放CFG"}
-            },
             "54": {
                 "inputs": {
                     "unet_name": unet_name,
@@ -437,23 +429,55 @@ impl ComfyUIClient {
                 },
                 "class_type": "DualCLIPLoader",
                 "_meta": {"title": "双CLIP加载器"}
-            },
-            "59": {
-                "inputs": {
-                    "text": negative_prompt,
-                    "clip": ["58", 0]
-                },
-                "class_type": "CLIPTextEncode",
-                "_meta": {"title": "CLIP文本编码器"}
-            },
-            "61": {
-                "inputs": {
-                    "text": positive_prompt,
-                    "clip": ["58", 0]
-                },
-                "class_type": "CLIPTextEncode",
-                "_meta": {"title": "CLIP文本编码器"}
             }
+        });
+
+        // Build LoRA chain and determine final model/clip outputs
+        let mut model_output = json!(["54", 0]); // Start from UNETLoader
+        let mut clip_output = json!(["58", 0]);  // Start from DualCLIPLoader
+
+        for (i, lora) in request.loras.iter().enumerate() {
+            let node_id = format!("{}", 200 + i);
+            workflow[&node_id] = json!({
+                "inputs": {
+                    "lora_name": lora.name,
+                    "strength": lora.strength,
+                    "model": model_output,
+                    "clip": clip_output
+                },
+                "class_type": "NewBieLoraLoader",
+                "_meta": {"title": format!("LoRA加载器 {}", i + 1)}
+            });
+            model_output = json!([node_id, 0]);
+            clip_output = json!([node_id, 1]);
+        }
+
+        // RescaleCFG uses final model output
+        workflow["51"] = json!({
+            "inputs": {
+                "multiplier": 0.9,
+                "model": model_output
+            },
+            "class_type": "RescaleCFG",
+            "_meta": {"title": "缩放CFG"}
+        });
+
+        // CLIPTextEncode nodes use final clip output
+        workflow["59"] = json!({
+            "inputs": {
+                "text": negative_prompt,
+                "clip": clip_output
+            },
+            "class_type": "CLIPTextEncode",
+            "_meta": {"title": "CLIP文本编码器"}
+        });
+        workflow["61"] = json!({
+            "inputs": {
+                "text": positive_prompt,
+                "clip": clip_output
+            },
+            "class_type": "CLIPTextEncode",
+            "_meta": {"title": "CLIP文本编码器"}
         });
 
         // Add HiFix nodes if enabled
