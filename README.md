@@ -75,9 +75,10 @@
 | gemma3-4b-it.safetensors | [下载](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/text_encoder/gemma3-4b-it.safetensors) | `ComfyUI/models/clip/` |
 | jina-clip-v2.safetensors | [下载](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/clip_model/jina-clip-v2.safetensors) | `ComfyUI/models/clip/` |
 | VAE (newbie-image.safetensors) | [下载](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/vae/diffusion_pytorch_model.safetensors) | `ComfyUI/models/vae/` |
-| UNet (transformer) | [下载](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/transformer/diffusion_pytorch_model.safetensors) | `ComfyUI/models/unet/` |
+| UNet (NewBie-image-v0.1-exp-ep9) | [下载](https://huggingface.co/NewBie-AI/NewBie-image-Exp0.1/resolve/main/transformer/diffusion_pytorch_model.safetensors) | `ComfyUI/models/unet/` |
 
 > 国内用户可使用镜像：将 `huggingface.co` 替换为 `hf-mirror.com`
+> 若您是手动下载的模型，请讲模型的文件名更换成功括号内的命名，否则后端会检测不到
 
 ### 3. 启动应用
 
