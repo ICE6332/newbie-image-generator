@@ -438,10 +438,13 @@ impl ComfyUIClient {
 
         for (i, lora) in request.loras.iter().enumerate() {
             let node_id = format!("{}", 200 + i);
+            // ComfyUI on Windows expects backslashes in lora paths
+            let lora_name = lora.name.replace("/", "\\");
             workflow[&node_id] = json!({
                 "inputs": {
-                    "lora_name": lora.name,
+                    "lora_name": lora_name,
                     "strength": lora.strength,
+                    "enabled": true,
                     "model": model_output,
                     "clip": clip_output
                 },
