@@ -18,6 +18,7 @@ use crate::comfyui::ComfyUIClient;
 use crate::config::{ComfyUIUrlPolicy, Config};
 use crate::error::{AppError, AppResult};
 use crate::models::*;
+use crate::services::prompt_optimizer::PromptOptimizer;
 
 /// Application state shared across handlers
 #[derive(Clone)]
@@ -25,6 +26,7 @@ pub struct AppState {
     pub comfyui: ComfyUIClient,
     pub event_tx: broadcast::Sender<String>,
     pub comfyui_client_id: String,
+    pub prompt_optimizer: PromptOptimizer,
     pub config: Arc<Config>,
 }
 
@@ -53,6 +55,7 @@ pub fn create_router(state: AppState) -> Router {
         )
         // Generation endpoints
         .route("/api/generate", post(generate_handler))
+        .route("/api/prompt/optimize", post(optimize_prompt_handler))
         .route("/api/queue", get(queue_handler))
         .route("/api/history/{prompt_id}", get(history_handler))
         // Image endpoints
@@ -65,6 +68,18 @@ pub fn create_router(state: AppState) -> Router {
         .with_state(state)
         // Fallback to serve static files (frontend)
         .fallback_service(serve_dir)
+}
+
+// ============================================================================
+// Prompt Optimization Handlers
+// ============================================================================
+
+async fn optimize_prompt_handler(
+    State(state): State<AppState>,
+    Json(request): Json<OptimizePromptRequest>,
+) -> AppResult<Json<OptimizePromptResponse>> {
+    let resp = state.prompt_optimizer.optimize(request).await?;
+    Ok(Json(resp))
 }
 
 fn normalize_comfyui_url(raw: &str, policy: ComfyUIUrlPolicy) -> AppResult<String> {

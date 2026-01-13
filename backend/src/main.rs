@@ -3,11 +3,12 @@ mod comfyui;
 mod config;
 mod error;
 mod models;
+mod services;
 
+use axum::http::HeaderValue;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
-use axum::http::HeaderValue;
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -15,6 +16,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use crate::api::{create_router, start_comfyui_listener, AppState};
 use crate::comfyui::ComfyUIClient;
 use crate::config::Config;
+use crate::services::prompt_optimizer::PromptOptimizer;
 
 #[tokio::main]
 async fn main() {
@@ -43,6 +45,7 @@ async fn main() {
         comfyui: comfyui.clone(),
         event_tx: event_tx.clone(),
         comfyui_client_id: comfyui_client_id.clone(),
+        prompt_optimizer: PromptOptimizer::new(),
         config: config.clone(),
     };
 
