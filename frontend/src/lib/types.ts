@@ -1,5 +1,10 @@
 // API Types matching backend models
 
+export interface LoraConfig {
+  name: string;
+  strength: number;
+}
+
 export interface GenerateRequest {
   prompt: string;
   system_prompt?: string;
@@ -13,6 +18,7 @@ export interface GenerateRequest {
   scheduler?: string;
   denoise?: number;
   batch_size?: number;
+  loras?: LoraConfig[];
   hifix_enabled?: boolean;
   hifix_steps?: number;
   hifix_cfg?: number;
