@@ -42,6 +42,9 @@ pub struct GenerateRequest {
     /// Batch size
     #[serde(default = "default_batch_size")]
     pub batch_size: u32,
+    /// LoRA configurations
+    #[serde(default)]
+    pub loras: Vec<LoraConfig>,
     /// HiFix enabled
     #[serde(default)]
     pub hifix_enabled: bool,
@@ -66,6 +69,42 @@ pub struct GenerateRequest {
     /// HiFix upscale method
     #[serde(default = "default_hifix_upscale_method")]
     pub hifix_upscale_method: String,
+}
+
+/// LoRA configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoraConfig {
+    /// LoRA file name
+    pub name: String,
+    /// LoRA strength (-4.0 to 4.0)
+    #[serde(default = "default_lora_strength")]
+    pub strength: f32,
+}
+
+fn default_lora_strength() -> f32 {
+    1.0
+}
+
+/// Prompt optimization request (Gemma + Jina CLIP rerank)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OptimizePromptRequest {
+    /// User handwritten prompt (any language)
+    pub prompt: String,
+    /// Optional additional tags (raw text)
+    #[serde(default)]
+    pub tags: String,
+    /// Optional reference image as a data URL (data:image/...;base64,...) or bare base64
+    #[serde(default)]
+    pub reference_image: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OptimizePromptResponse {
+    /// Final JSON string (includes XML in image.tags) that should replace the user's prompt
+    pub optimized_prompt: String,
+    /// Optional extra candidates for UI preview
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub candidates: Option<Vec<String>>,
 }
 
 fn default_width() -> u32 {
