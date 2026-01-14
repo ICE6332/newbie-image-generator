@@ -58,6 +58,8 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/prompt/optimize", post(optimize_prompt_handler))
         .route("/api/queue", get(queue_handler))
         .route("/api/history/{prompt_id}", get(history_handler))
+        // Model endpoints
+        .route("/api/loras", get(loras_handler))
         // Image endpoints
         .route("/api/images/*filename", get(image_handler))
         // Control endpoints
@@ -312,6 +314,18 @@ async fn generate_handler(
     }))
 }
 
+// ============================================================================
+// Prompt Optimization Handlers
+// ============================================================================
+
+async fn optimize_prompt_handler(
+    State(state): State<AppState>,
+    Json(request): Json<OptimizePromptRequest>,
+) -> AppResult<Json<OptimizePromptResponse>> {
+    let resp = state.prompt_optimizer.optimize(request).await?;
+    Ok(Json(resp))
+}
+
 async fn queue_handler(State(state): State<AppState>) -> AppResult<Json<serde_json::Value>> {
     let queue = state.comfyui.get_queue().await?;
 
@@ -321,6 +335,11 @@ async fn queue_handler(State(state): State<AppState>) -> AppResult<Json<serde_js
         "running_prompts": queue.queue_running,
         "pending_prompts": queue.queue_pending
     })))
+}
+
+async fn loras_handler(State(state): State<AppState>) -> AppResult<Json<Vec<String>>> {
+    let models = state.comfyui.get_available_models().await?;
+    Ok(Json(models.lora))
 }
 
 async fn history_handler(
