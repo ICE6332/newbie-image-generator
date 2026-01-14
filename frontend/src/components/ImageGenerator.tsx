@@ -132,6 +132,8 @@ export function ImageGenerator() {
   const [availableLoras, setAvailableLoras] = useState<string[]>([]);
   const [loraOpen, setLoraOpen] = useState(false);
   const [loraQuery, setLoraQuery] = useState("");
+  const [loraLoading, setLoraLoading] = useState(false);
+  const [loraError, setLoraError] = useState<string | null>(null);
   const {
     comfyuiUrl,
     comfyuiConnected,
@@ -158,14 +160,26 @@ export function ImageGenerator() {
     localStorage.setItem("generationParams", JSON.stringify(params));
   }, [params]);
 
-  // Fetch available LoRAs
-  useEffect(() => {
-    api
-      .getLoras()
-      .then(setAvailableLoras)
-      .catch(() => {});
+  const fetchLoras = useCallback(async () => {
+    setLoraLoading(true);
+    setLoraError(null);
+    try {
+      const loras = await api.getLoras();
+      setAvailableLoras(loras);
+    } catch (err) {
+      setAvailableLoras([]);
+      setLoraError(err instanceof Error ? err.message : "获取 LoRA 列表失败");
+    } finally {
+      setLoraLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    if (comfyuiConnected === false) {
+      return;
+    }
+    fetchLoras();
+  }, [fetchLoras, comfyuiConnected, comfyuiUrl]);
   const loraQueryNormalized = loraQuery.trim().toLowerCase();
   const filteredLoras = loraQueryNormalized
     ? availableLoras.filter((name) =>
@@ -674,16 +688,31 @@ export function ImageGenerator() {
               {loraOpen && (
                 <div className="space-y-3 pl-4 border-l-2 border-primary/20">
                   <div className="space-y-2">
-                    <Label className="text-xs">搜索 LoRA</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">搜索 LoRA</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fetchLoras();
+                        }}
+                        disabled={loraLoading}
+                      >
+                        {loraLoading ? "加载中" : "刷新"}
+                      </Button>
+                    </div>
                     <Input
                       value={loraQuery}
                       onChange={(e) => setLoraQuery(e.target.value)}
                       placeholder="输入关键词筛选 LoRA"
                     />
                     <p className="text-xs text-muted-foreground">
-                      {availableLoras.length === 0
-                        ? "暂无可用 LoRA"
-                        : `共 ${availableLoras.length}，匹配 ${filteredLoras.length}`}
+                      {loraError
+                        ? `LoRA 列表获取失败：${loraError}`
+                        : availableLoras.length === 0
+                          ? "暂无可用 LoRA"
+                          : `共 ${availableLoras.length}，匹配 ${filteredLoras.length}`}
                     </p>
                   </div>
                   {params.loras.length > 0 && (
