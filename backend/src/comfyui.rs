@@ -317,20 +317,9 @@ impl ComfyUIClient {
                 .collect();
         }
 
-        // Get LoRA models (try NewBieLoraLoader first, fallback to LoraLoader)
-        let lora_list = info
-            .get("NewBieLoraLoader")
-            .or_else(|| info.get("LoraLoader"))
-            .and_then(|v| v.get("input"))
-            .and_then(|v| v.get("required"))
-            .and_then(|v| v.get("lora_name"))
-            .and_then(|v| v.get(0))
-            .and_then(|v| v.as_array());
-        if let Some(list) = lora_list {
-            models.lora = list
-                .iter()
-                .filter_map(|v| v.as_str().map(String::from))
-                .collect();
+        let lora_list = extract_lora_names(&info);
+        if !lora_list.is_empty() {
+            models.lora = lora_list;
         }
 
         Ok(models)
@@ -450,7 +439,7 @@ impl ComfyUIClient {
 
         // Build LoRA chain and determine final model/clip outputs
         let mut model_output = json!(["54", 0]); // Start from UNETLoader
-        let mut clip_output = json!(["58", 0]);  // Start from DualCLIPLoader
+        let mut clip_output = json!(["58", 0]); // Start from DualCLIPLoader
 
         for (i, lora) in request.loras.iter().enumerate() {
             let node_id = format!("{}", 200 + i);
@@ -606,4 +595,80 @@ fn rand_seed() -> u64 {
         .duration_since(UNIX_EPOCH)
         .expect("Time went backwards");
     duration.as_nanos() as u64 % 1_000_000_000_000_000
+}
+
+fn extract_lora_names(info: &Value) -> Vec<String> {
+    let preferred_nodes = [
+        "NewBieLoraLoader",
+        "LoraLoader",
+        "LoraLoaderModelOnly",
+        "LoraLoaderModelOnlySDXL",
+    ];
+
+    for node in preferred_nodes {
+        if let Some(list) = extract_lora_list_from_node(info.get(node)) {
+            return list;
+        }
+    }
+
+    if let Some(nodes) = info.as_object() {
+        for (_name, node) in nodes {
+            if let Some(list) = extract_lora_list_from_node(Some(node)) {
+                return list;
+            }
+        }
+    }
+
+    Vec::new()
+}
+
+fn extract_lora_list_from_node(node: Option<&Value>) -> Option<Vec<String>> {
+    let node = node?;
+    let input = node.get("input")?;
+
+    for section in ["required", "optional"] {
+        if let Some(list) = extract_lora_list_from_section(input.get(section)) {
+            return Some(list);
+        }
+    }
+
+    None
+}
+
+fn extract_lora_list_from_section(section: Option<&Value>) -> Option<Vec<String>> {
+    let section = section?;
+    for field in ["lora_name", "lora_names"] {
+        if let Some(field_value) = section.get(field) {
+            if let Some(list) = extract_lora_list_from_field(field_value) {
+            return Some(list);
+        }
+    }
+    None
+}
+
+fn extract_lora_list_from_field(field: &Value) -> Option<Vec<String>> {
+    match field {
+        Value::Array(items) => {
+            if let Some(Value::Array(list)) = items.first() {
+                let names: Vec<String> = list
+                    .iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect();
+                if !names.is_empty() {
+                    return Some(names);
+                }
+            }
+
+            let names: Vec<String> = items
+                .iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect();
+            if !names.is_empty() {
+                return Some(names);
+            }
+        }
+        _ => {}
+    }
+
+    None
 }

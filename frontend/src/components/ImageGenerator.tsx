@@ -131,6 +131,7 @@ export function ImageGenerator() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [availableLoras, setAvailableLoras] = useState<string[]>([]);
   const [loraOpen, setLoraOpen] = useState(false);
+  const [loraQuery, setLoraQuery] = useState("");
   const {
     comfyuiUrl,
     comfyuiConnected,
@@ -164,6 +165,13 @@ export function ImageGenerator() {
       .then(setAvailableLoras)
       .catch(() => {});
   }, []);
+
+  const loraQueryNormalized = loraQuery.trim().toLowerCase();
+  const filteredLoras = loraQueryNormalized
+    ? availableLoras.filter((name) =>
+        name.toLowerCase().includes(loraQueryNormalized),
+      )
+    : availableLoras;
 
   const handleWSMessage = useCallback((message: WSMessage) => {
     switch (message.type) {
@@ -663,66 +671,94 @@ export function ImageGenerator() {
                 </Button>
               </div>
 
-              {loraOpen && params.loras.length > 0 && (
+              {loraOpen && (
                 <div className="space-y-3 pl-4 border-l-2 border-primary/20">
-                  {params.loras.map((lora, index) => (
-                    <div key={index} className="space-y-2 p-2 rounded border">
-                      <div className="flex items-center gap-2">
-                        <Select
-                          value={lora.name}
-                          onValueChange={(value) => {
-                            const newLoras = [...params.loras];
-                            newLoras[index].name = value;
-                            setParams({ ...params, loras: newLoras });
-                          }}
+                  <div className="space-y-2">
+                    <Label className="text-xs">搜索 LoRA</Label>
+                    <Input
+                      value={loraQuery}
+                      onChange={(e) => setLoraQuery(e.target.value)}
+                      placeholder="输入关键词筛选 LoRA"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {availableLoras.length === 0
+                        ? "暂无可用 LoRA"
+                        : `共 ${availableLoras.length}，匹配 ${filteredLoras.length}`}
+                    </p>
+                  </div>
+                  {params.loras.length > 0 && (
+                    <div className="space-y-3">
+                      {params.loras.map((lora, index) => (
+                        <div
+                          key={index}
+                          className="space-y-2 p-2 rounded border"
                         >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="选择 LoRA" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableLoras.map((name) => (
-                              <SelectItem key={name} value={name}>
-                                {name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const newLoras = params.loras.filter(
-                              (_, i) => i !== index,
-                            );
-                            setParams({ ...params, loras: newLoras });
-                          }}
-                        >
-                          ✕
-                        </Button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Label className="text-xs w-16">强度</Label>
-                        <Slider
-                          value={[lora.strength]}
-                          onValueChange={(value) => {
-                            const newLoras = [...params.loras];
-                            newLoras[index].strength = value[0];
-                            setParams({ ...params, loras: newLoras });
-                          }}
-                          min={-4}
-                          max={4}
-                          step={0.1}
-                          className="flex-1"
-                        />
-                        <Badge
-                          variant="outline"
-                          className="w-12 justify-center"
-                        >
-                          {lora.strength.toFixed(1)}
-                        </Badge>
-                      </div>
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={lora.name}
+                              onValueChange={(value) => {
+                                const newLoras = [...params.loras];
+                                newLoras[index].name = value;
+                                setParams({ ...params, loras: newLoras });
+                              }}
+                            >
+                              <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="选择 LoRA" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {filteredLoras.length === 0 ? (
+                                  <SelectItem value="__empty" disabled>
+                                    {availableLoras.length === 0
+                                      ? "无可用 LoRA"
+                                      : "没有匹配结果"}
+                                  </SelectItem>
+                                ) : (
+                                  filteredLoras.map((name) => (
+                                    <SelectItem key={name} value={name}>
+                                      {name}
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newLoras = params.loras.filter(
+                                  (_, i) => i !== index,
+                                );
+                                setParams({ ...params, loras: newLoras });
+                              }}
+                            >
+                              X
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs w-16">强度</Label>
+                            <Slider
+                              value={[lora.strength]}
+                              onValueChange={(value) => {
+                                const newLoras = [...params.loras];
+                                newLoras[index].strength = value[0];
+                                setParams({ ...params, loras: newLoras });
+                              }}
+                              min={-4}
+                              max={4}
+                              step={0.1}
+                              className="flex-1"
+                            />
+                            <Badge
+                              variant="outline"
+                              className="w-12 justify-center"
+                            >
+                              {lora.strength.toFixed(1)}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
