@@ -33,6 +33,7 @@
 - **XML Import** - Import existing XML prompts, automatically parse and populate corresponding text fields
 - **Real-time Preview** - Display generation progress in real-time
 - **HiFix** – Secondary Upscaling for High-Resolution Image Refinement
+- **LoRA Support** - Load model-specific LoRA/Lokr.
 - **One-click Model Download** - Built-in aria2c multi-threaded download with resume support
 - **Clean & Beautiful** - Modern UI design, simple and intuitive
 - **Theme Switching** - Dark/Light theme support
@@ -52,6 +53,9 @@
 
 - **ComfyUI**: Requires version 0.7.0 or higher (NewBie nodes built-in)
 - **NewBie image Exp0.1 Model**: Complete model files required (see "Prepare Models" section below)
+- **NewBie-Node** - Install the Newbie nodes in ComfyUI; otherwise LoRA-related features will not work.
+
+> https://github.com/NewBieAI-Lab/ComfyUI-Newbie-Nodes
 
 ## Quick Start
 
