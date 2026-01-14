@@ -638,7 +638,8 @@ fn extract_lora_list_from_node(node: Option<&Value>) -> Option<Vec<String>> {
 fn extract_lora_list_from_section(section: Option<&Value>) -> Option<Vec<String>> {
     let section = section?;
     for field in ["lora_name", "lora_names"] {
-        if let Some(list) = extract_lora_list_from_field(section.get(field)?) {
+        if let Some(field_value) = section.get(field) {
+            if let Some(list) = extract_lora_list_from_field(field_value) {
             return Some(list);
         }
     }
