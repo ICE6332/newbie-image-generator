@@ -29,14 +29,37 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     ...options,
   });
 
+  const contentType = response.headers.get("content-type") || "";
+  const isJson = contentType.includes("application/json");
+
   if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ error: "Unknown error" }));
-    throw new ApiError(response.status, error.error || "Request failed");
+    if (isJson) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: "Unknown error" }));
+      throw new ApiError(response.status, error.error || "Request failed");
+    }
+
+    const text = await response.text().catch(() => "");
+    const message = text
+      ? `Request failed: ${text.slice(0, 200)}`
+      : "Request failed";
+    throw new ApiError(response.status, message);
   }
 
-  return response.json();
+  if (!isJson) {
+    const text = await response.text().catch(() => "");
+    const hint = "Expected JSON but got non-JSON response.";
+    const details = text ? ` Response starts with: ${text.slice(0, 120)}` : "";
+    throw new ApiError(response.status, `${hint}${details}`);
+  }
+
+  return response.json().catch((err) => {
+    throw new ApiError(
+      response.status,
+      `Failed to parse JSON response: ${err instanceof Error ? err.message : "Unknown error"}`,
+    );
+  });
 }
 
 export const api = {
