@@ -640,7 +640,8 @@ fn extract_lora_list_from_section(section: Option<&Value>) -> Option<Vec<String>
     for field in ["lora_name", "lora_names"] {
         if let Some(field_value) = section.get(field) {
             if let Some(list) = extract_lora_list_from_field(field_value) {
-            return Some(list);
+                return Some(list);
+            }
         }
     }
     None

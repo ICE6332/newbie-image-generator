@@ -10,6 +10,7 @@ CLAUDE.md
 backend/target/
 frontend/dist/
 frontend/node_modules/
+release/
 
 # Executables
 *.exe
