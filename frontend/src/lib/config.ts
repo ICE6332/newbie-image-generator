@@ -8,7 +8,8 @@ export const resolveApiBase = () => {
 
   const backendBase = import.meta.env.VITE_BACKEND_URL?.trim();
   if (backendBase) {
-    return `${trimTrailingSlash(backendBase)}/api`;
+    const trimmed = trimTrailingSlash(backendBase);
+    return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
   }
 
   return "/api";

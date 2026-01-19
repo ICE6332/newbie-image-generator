@@ -1,6 +1,9 @@
 use axum::{
+    body::Body,
     extract::{Path, Query, State, WebSocketUpgrade},
-    response::IntoResponse,
+    http::{header, HeaderValue, Request},
+    middleware::{self, Next},
+    response::{IntoResponse, Response},
     routing::{get, post},
     Json, Router,
 };
@@ -68,8 +71,26 @@ pub fn create_router(state: AppState) -> Router {
         // WebSocket endpoint
         .route("/ws", get(websocket_handler))
         .with_state(state)
+        .layer(middleware::from_fn(no_cache_api))
         // Fallback to serve static files (frontend)
         .fallback_service(serve_dir)
+}
+
+async fn no_cache_api(req: Request<Body>, next: Next) -> Response {
+    let path = req.uri().path().to_string();
+    let mut resp = next.run(req).await;
+
+    if path.starts_with("/api/") {
+        let headers = resp.headers_mut();
+        headers.insert(
+            header::CACHE_CONTROL,
+            HeaderValue::from_static("no-store, no-cache, must-revalidate, max-age=0"),
+        );
+        headers.insert(header::PRAGMA, HeaderValue::from_static("no-cache"));
+        headers.insert(header::EXPIRES, HeaderValue::from_static("0"));
+    }
+
+    resp
 }
 
 // ============================================================================
@@ -312,18 +333,6 @@ async fn generate_handler(
         prompt_id: response.prompt_id,
         number: response.number,
     }))
-}
-
-// ============================================================================
-// Prompt Optimization Handlers
-// ============================================================================
-
-async fn optimize_prompt_handler(
-    State(state): State<AppState>,
-    Json(request): Json<OptimizePromptRequest>,
-) -> AppResult<Json<OptimizePromptResponse>> {
-    let resp = state.prompt_optimizer.optimize(request).await?;
-    Ok(Json(resp))
 }
 
 async fn queue_handler(State(state): State<AppState>) -> AppResult<Json<serde_json::Value>> {
